@@ -1,5 +1,6 @@
 package com.atguigu.gmall.realtime.common.base;
 
+import com.atguigu.gmall.realtime.common.constant.Constant;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
@@ -49,15 +50,13 @@ public abstract class BaseApp {
         // 1.5 从 Kafka 目标主题读取数据，封装为流
         DataStreamSource<String> kafkasource =  env.fromSource(
                 KafkaSource.<String>builder()
-                        .setBootstrapServers("hadoop001:9092")
-                        .setTopics("topic_db")
+                        .setBootstrapServers(Constant.KAFKA_BROKERS)
+                        .setTopics(topic)
                         .setStartingOffsets(OffsetsInitializer.earliest())
-                        .setGroupId("test01")
+                        .setGroupId(ckAndGroupId)
                         .setValueOnlyDeserializer(new SimpleStringSchema())
                         .build()
                 , WatermarkStrategy.<String>noWatermarks(),"kafka_source");
-
-        kafkasource.print();
 
 
         // 2. 执行具体的处理逻辑
