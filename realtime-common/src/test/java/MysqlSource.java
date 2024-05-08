@@ -27,12 +27,14 @@ public class MysqlSource {
                 .username(Constant.MYSQL_USER_NAME)
                 .password(Constant.MYSQL_PASSWORD)
                 .databaseList("gmall2023_config")
+                //因为设计是多库多表，只写表名会有问题
                 .tableList("gmall2023_config.table_process_dim")
                 .deserializer(new JsonDebeziumDeserializationSchema())
                 .startupOptions(StartupOptions.initial())
                 .build();
 
-        DataStreamSource<String> mysqlsource = env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "mysqlsource");
+        //读取mysql的binlog需要将并行度设置为1，否则会有bug捕捉不到变更
+        DataStreamSource<String> mysqlsource = env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "mysqlsource").setParallelism(1);
 
         mysqlsource.print();
 
