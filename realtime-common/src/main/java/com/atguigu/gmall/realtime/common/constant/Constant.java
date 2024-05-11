@@ -11,6 +11,10 @@ public class Constant {
     public static final String MYSQL_USER_NAME = "root";
     public static final String MYSQL_PASSWORD = "123456";
     public static final String HBASE_NAMESPACE = "gmall";
+    public static final String HBASE_ZOOKEEPER_QUORUM = "hadoop001,hadoop002,hadoop003";
+
+    public static final String PROCESS_DATABASE = "gmall2023_config";
+    public static final String PROCESS_DIM_TABLE_NAME = "table_process_dim";
 
     public static final String MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
     public static final String MYSQL_URL = "jdbc:mysql://hadoop001:3306?useSSL=false";
