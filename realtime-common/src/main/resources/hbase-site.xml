@@ -39,36 +39,12 @@
 
     See also https://hbase.apache.org/book.html#standalone_dist
   -->
-  <property>
-    <name>hbase.cluster.distributed</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>hbase.tmp.dir</name>
-    <value>./tmp</value>
-  </property>
-  <property>
-    <name>hbase.unsafe.stream.capability.enforce</name>
-    <value>false</value>
-  </property>
 
 <property>
     <name>hbase.zookeeper.quorum</name>
     <value>hadoop001,hadoop002,hadoop003</value>
-    <description>The directory shared by RegionServers.
-    </description>
   </property>
 
-  <property>
-    <name>hbase.rootdir</name>
-    <value>hdfs://hadoop001:8020/hbase</value>
-    <description>The directory shared by RegionServers.
-    </description>
-  </property>
 
-  <property>
-    <name>hbase.wal.provider</name>
-    <value>filesystem</value>
-  </property>
 
 </configuration>

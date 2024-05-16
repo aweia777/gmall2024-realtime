@@ -1,19 +1,15 @@
 package com.atguigu.gmall.realtime.common.base;
 
-import com.atguigu.gmall.realtime.common.constant.Constant;
+import com.atguigu.gmall.realtime.common.util.FlinkSourceUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
-import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import static org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION;
-
 public abstract class BaseApp {
+    public abstract void handle(StreamExecutionEnvironment env,
+                                DataStreamSource<String> stream);
 
     public void start(int port, int parallelism, String ckAndGroupId, String topic) {
         // 1. 环境准备
@@ -26,6 +22,7 @@ public abstract class BaseApp {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
 
         // 1.3 设置并行度
+        /*
         env.setParallelism(parallelism);
 
         // 1.4 状态后端及检查点相关配置
@@ -41,26 +38,20 @@ public abstract class BaseApp {
         // 1.4.5 checkpoint 并发数
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
         // 1.4.6 checkpoint 之间的最小间隔
-        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(5000);
+        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(500);
         // 1.4.7 checkpoint  的超时时间
         env.getCheckpointConfig().setCheckpointTimeout(10000);
         // 1.4.8 job 取消时 checkpoint 保留策略
         env.getCheckpointConfig().setExternalizedCheckpointCleanup(RETAIN_ON_CANCELLATION);
+        */
 
         // 1.5 从 Kafka 目标主题读取数据，封装为流
-        DataStreamSource<String> kafkasource =  env.fromSource(
-                KafkaSource.<String>builder()
-                        .setBootstrapServers(Constant.KAFKA_BROKERS)
-                        .setTopics(topic)
-                        .setStartingOffsets(OffsetsInitializer.earliest())
-                        .setGroupId(ckAndGroupId)
-                        .setValueOnlyDeserializer(new SimpleStringSchema())
-                        .build()
-                , WatermarkStrategy.<String>noWatermarks(),"kafka_source");
+        KafkaSource<String> source = FlinkSourceUtil.getKafkaSource(ckAndGroupId, topic);
 
+        DataStreamSource<String> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "kafka_source");
 
         // 2. 执行具体的处理逻辑
-        handle(env, kafkasource);
+        handle(env, stream);
 
         // 3. 执行 Job
         try {
@@ -68,11 +59,6 @@ public abstract class BaseApp {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
 
-    public abstract void handle(StreamExecutionEnvironment env, DataStreamSource<String> stream);
-
 }
-
