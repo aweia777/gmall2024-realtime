@@ -1,23 +1,29 @@
 package com.atguigu.gmall.realtime.dwd.db.spilt.app;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.common.base.BaseApp;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 import com.atguigu.gmall.realtime.common.util.DateFormatUtil;
+import com.atguigu.gmall.realtime.common.util.FlinkSinkUtil;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.datastream.SideOutputDataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 
 import java.time.Duration;
 
@@ -37,9 +43,92 @@ public class DwdBaseLog extends BaseApp {
 
         SingleOutputStreamOperator<JSONObject> isNewFixStream = isNewFix(keyedStream);
 
-        isNewFixStream.print();
+//        3.拆分不同类型的用户行为日志
+//        启动日志：启动信息     报错信息
+//        页面日志：页面信息     曝光信息    动作信息    报错信息
+//        使用侧输出流
+        OutputTag<String> startTag = new OutputTag<String>("start", TypeInformation.of(String.class));
+        OutputTag<String> errorTag = new OutputTag<String>("err", TypeInformation.of(String.class));
+        OutputTag<String> displayTag = new OutputTag<String>("display", TypeInformation.of(String.class));
+        OutputTag<String> actionTag = new OutputTag<String>("action", TypeInformation.of(String.class));
+
+        SingleOutputStreamOperator<String> pageStream = splitLog(isNewFixStream, startTag, errorTag, displayTag, actionTag);
+        SideOutputDataStream<String> startStream = pageStream.getSideOutput(startTag);
+        SideOutputDataStream<String> errStream = pageStream.getSideOutput(errorTag);
+        SideOutputDataStream<String> displayStream = pageStream.getSideOutput(displayTag);
+        SideOutputDataStream<String> actionStream = pageStream.getSideOutput(actionTag);
+
+//        pageStream.print("page");
+//        startStream.print("start");
+//        errStream.print("err");
+//        displayStream.print("display");
+//        actionStream.print("action");
 
 
+        pageStream.sinkTo(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_TRAFFIC_PAGE));
+        pageStream.sinkTo(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_TRAFFIC_START));
+        pageStream.sinkTo(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_TRAFFIC_ERR));
+        pageStream.sinkTo(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_TRAFFIC_DISPLAY));
+        pageStream.sinkTo(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_TRAFFIC_ACTION));
+
+//
+
+    }
+
+
+
+
+    public SingleOutputStreamOperator<String> splitLog(SingleOutputStreamOperator<JSONObject> isNewFixStream, OutputTag<String> startTag, OutputTag<String> errorTag, OutputTag<String> displayTag, OutputTag<String> actionTag) {
+        return isNewFixStream.process(new ProcessFunction<JSONObject, String>() {
+            @Override
+            public void processElement(JSONObject object,
+                                       ProcessFunction<JSONObject, String>.Context context,
+                                       Collector<String> collector) throws Exception {
+//                根据不同的数据，拆分到不同的侧输出流
+                JSONObject err = object.getJSONObject("err");
+                if (err != null) {
+                    context.output(errorTag, err.toJSONString());
+                    object.remove("err");
+                }
+                JSONObject page = object.getJSONObject("page");
+                JSONObject start = object.getJSONObject("start");
+                JSONObject common = object.getJSONObject("common");
+                Long ts = object.getLong("ts");
+                if (start != null) {
+//                    当前为启动日志
+                    context.output(startTag, object.toJSONString());
+                } else if (page != null) {
+//                    当前为页面日志
+                    JSONArray displays = object.getJSONArray("displays");
+                    if (displays != null){
+                        for (int i = 0; i < displays.size(); i++) {
+                            JSONObject display = displays.getJSONObject(i);
+                            display.put("common", common);
+                            display.put("ts", ts);
+                            display.put("page", page);
+                            context.output(displayTag, display.toJSONString());
+                        }
+                        object.remove("displays");
+                    }
+
+
+                    JSONArray actions = object.getJSONArray("actions");
+                    if ( actions != null){
+                        for (int i = 0; i < actions.size(); i++) {
+                            JSONObject action = actions.getJSONObject(i);
+                            action.put("common", common);
+                            action.put("ts", ts);
+                            action.put("page", page);
+                            context.output(actionTag, action.toJSONString());
+                        }
+                        object.remove("actions");
+                    }
+
+
+                    collector.collect(object.toJSONString());
+                }
+            }
+        });
     }
 
     private SingleOutputStreamOperator<JSONObject> isNewFix(KeyedStream<JSONObject, String> keyedStream) {
