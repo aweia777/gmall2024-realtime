@@ -21,6 +21,7 @@ import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReadOnlyBroadcastState;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -38,7 +39,8 @@ public class DimApp extends BaseApp {
         new DimApp().start(10001,
                 4,
                 "dim_app",
-                Constant.TOPIC_DB
+                Constant.TOPIC_DB,
+                OffsetsInitializer.earliest()
         );
     }
 

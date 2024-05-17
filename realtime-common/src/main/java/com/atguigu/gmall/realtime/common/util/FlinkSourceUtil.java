@@ -12,12 +12,13 @@ import java.nio.charset.StandardCharsets;
 
 public class FlinkSourceUtil {
     public static KafkaSource<String> getKafkaSource(String groupId,
-                                                     String topic) {
+                                                     String topic,
+                                                     OffsetsInitializer offset) {
         return KafkaSource.<String>builder()
                 .setBootstrapServers(Constant.KAFKA_BROKERS)
                 .setGroupId(groupId)
                 .setTopics(topic)
-                .setStartingOffsets(OffsetsInitializer.latest())
+                .setStartingOffsets(offset)
                 .setValueOnlyDeserializer(new DeserializationSchema<String>() {
                     @Override
                     public String deserialize(byte[] message) throws IOException {

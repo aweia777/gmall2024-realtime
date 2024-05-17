@@ -4,6 +4,7 @@ import com.atguigu.gmall.realtime.common.util.FlinkSourceUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -11,7 +12,7 @@ public abstract class BaseApp {
     public abstract void handle(StreamExecutionEnvironment env,
                                 DataStreamSource<String> stream);
 
-    public void start(int port, int parallelism, String ckAndGroupId, String topic) {
+    public void start(int port, int parallelism, String ckAndGroupId, String topic,OffsetsInitializer offsetsInitializer) {
         // 1. 环境准备
         // 1.1 设置操作 Hadoop 的用户名为 Hadoop 超级用户 atguigu
         System.setProperty("HADOOP_USER_NAME", "atguigu");
@@ -46,7 +47,7 @@ public abstract class BaseApp {
         */
 
         // 1.5 从 Kafka 目标主题读取数据，封装为流
-        KafkaSource<String> source = FlinkSourceUtil.getKafkaSource(ckAndGroupId, topic);
+        KafkaSource<String> source = FlinkSourceUtil.getKafkaSource(ckAndGroupId, topic, offsetsInitializer);
 
         DataStreamSource<String> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "kafka_source");
 
