@@ -1,6 +1,9 @@
 package com.atguigu.gmall.realtime.common.util;
 
 import com.atguigu.gmall.realtime.common.constant.Constant;
+import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import com.ververica.cdc.connectors.mysql.table.StartupOptions;
+import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -38,6 +41,20 @@ public class FlinkSourceUtil {
                         return Types.STRING;
                     }
                 })
+                .build();
+    }
+
+    public static MySqlSource<String> getMysqlSource(String databases,String table ){
+
+        return MySqlSource.<String>builder()
+                .databaseList(databases)
+                .tableList(databases+"."+table)
+                .hostname(Constant.MYSQL_HOST)
+                .username(Constant.MYSQL_USER_NAME)
+                .password(Constant.MYSQL_PASSWORD)
+                .port(Constant.MYSQL_PORT)
+                .deserializer(new JsonDebeziumDeserializationSchema())
+                .startupOptions(StartupOptions.initial())
                 .build();
     }
 }

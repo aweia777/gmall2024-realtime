@@ -13,6 +13,7 @@
         <module name="realtime-dws" />
         <module name="realtime-dwd-trade-order-detail" />
         <module name="realtime-dwd-trade-order-pay-suc-detail" />
+        <module name="realtime-dwd-base-db" />
         <module name="realtime-dwd-interaction-comment-info" />
         <module name="realtime-dwd-trade-order-cancel-detail" />
       </profile>
