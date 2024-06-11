@@ -3,6 +3,18 @@ package com.atguigu.gmall.realtime.common.util;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 
 public class SQLUtil {
+    public static String getSinkDorisSQL(String tableName){
+        return "with (\n" +
+                " \t'connector' = 'doris',\n" +
+                        "      'fenodes' = '" +Constant.DORIS_FENODES+ "',\n" +
+                        "      'table.identifier' = '"+Constant.DORIS_DATABASE + "."+ tableName+"',\n" +
+                        "      'username' = 'root',\n" +
+                        "      'password' = '',\n" +
+                        "      'sink.label-prefix' = 'doris_label"+System.currentTimeMillis()+"'\n" +
+                        " )";
+    }
+
+
     public static String getKafkaSourceSQL(String TopicName,String groupId,String earliestOrlatest){
         return "WITH (\n" +
                 "  'connector' = 'kafka',\n" +

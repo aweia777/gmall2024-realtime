@@ -19,6 +19,7 @@ public class Constant {
     public static final String MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
     public static final String MYSQL_URL = "jdbc:mysql://hadoop001:3306?useSSL=false";
 
+    public static final String PROCESS_DWD_TABLE_NAME = "table_process_dwd";
     public static final String TOPIC_DWD_TRAFFIC_START = "dwd_traffic_start";
     public static final String TOPIC_DWD_TRAFFIC_ERR = "dwd_traffic_err";
     public static final String TOPIC_DWD_TRAFFIC_PAGE = "dwd_traffic_page";
@@ -39,6 +40,13 @@ public class Constant {
 
     public static final String TOPIC_DWD_USER_REGISTER = "dwd_user_register";
 
+
+
+
+
     public static final int TWO_DAY_SECONDS = 2 * 24 * 60 * 60;
-    public static final String PROCESS_DWD_TABLE_NAME = "table_process_dwd";
+
+    public static final String DORIS_FENODES = "192.168.1.48:8030";
+    public static final String DORIS_DATABASE = "gmall2023_realtime";
+    public static final String DWS_TRAFFIC_SOURCE_KEYWORD_PAGE_VIEW_WINDOW = "dws_traffic_source_keyword_page_view_window";
 }

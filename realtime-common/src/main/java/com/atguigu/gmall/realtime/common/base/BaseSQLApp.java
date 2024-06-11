@@ -13,6 +13,8 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import static org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION;
+
 public abstract class BaseSQLApp {
     public abstract void handle(StreamTableEnvironment tEnv,StreamExecutionEnvironment env,String ckAndGroupId);
 
@@ -29,7 +31,7 @@ public abstract class BaseSQLApp {
         // 1.3 设置并行度
 
         env.setParallelism(parallelism);
-        /*
+
         // 1.4 状态后端及检查点相关配置
         // 1.4.1 设置状态后端
         env.setStateBackend(new HashMapStateBackend());
@@ -48,7 +50,7 @@ public abstract class BaseSQLApp {
         env.getCheckpointConfig().setCheckpointTimeout(10000);
         // 1.4.8 job 取消时 checkpoint 保留策略
         env.getCheckpointConfig().setExternalizedCheckpointCleanup(RETAIN_ON_CANCELLATION);
-        */
+
 
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
